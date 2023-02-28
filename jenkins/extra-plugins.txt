@@ -1,0 +1,3 @@
+rebuild:latest
+simple-theme-plugin:latest
+uno-choice:2.6.4
