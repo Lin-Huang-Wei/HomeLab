@@ -1,0 +1,16 @@
+---
+  - name: "Setup Kubernetes Server"
+    hosts: on-premises
+    gather_facts: no
+    tasks:
+      - name: Find k8s control plane node
+        ansible.builtin.set_fact:
+          control_plane_node: "{{ inventory_hostname }}"
+        when: "'control_plane_node' in group_names"
+
+      - name: Find k8s worker node
+        ansible.builtin.set_fact:
+          control_plane_node: "{{ inventory_hostname }}"
+        when: "'worker_node' in group_names"
+    roles:
+      - role: install-basetools

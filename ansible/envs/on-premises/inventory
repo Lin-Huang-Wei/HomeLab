@@ -1,0 +1,22 @@
+[kube]
+kube1 ansible_host=<IP Address> kubernetes_role=master
+kube2 ansible_host=<IP Address> kubernetes_role=node
+kube3 ansible_host=<IP Address> kubernetes_role=node
+
+[control_plane_node]
+kube1 ansible_host=<IP Address> kubernetes_role=master
+
+[worker_node]
+kube2 ansible_host=<IP Address> kubernetes_role=node
+kube3 ansible_host=<IP Address> kubernetes_role=node
+
+[on-premises:children]
+kube
+
+[on-premises:vars]
+ansible_user=<Your Name>
+ansible_password=<Your Password>
+ansible_become=true
+ansible_become_user=root
+ansible_become_password=<Your Password>
+ansible_ssh_private_key_file=/work/ansible/.ssh/k8s

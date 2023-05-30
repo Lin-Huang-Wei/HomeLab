@@ -1,0 +1,29 @@
+---
+DEFAULTS_PACKAGES:
+  - apt-transport-https
+  - bash
+  - ca-certificates
+  - curl
+  - dnsutils
+  - git
+  - git-lfs
+  - gettext-base
+  - iptables
+  - lsb-release
+  - lsof
+  - netcat
+  - ntpdate
+  - net-tools
+  - openssh-client
+  - python3-pip
+  - python-pip
+  - rsync
+  - software-properties-common
+  - tig
+  - tar
+  - tree
+  - telnet
+  - unzip
+  - vim
+  - wget
+  - zip

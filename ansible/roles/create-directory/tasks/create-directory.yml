@@ -1,0 +1,11 @@
+---
+- block:
+  - name: "Create Directory" #{{ directories_list | to_json | from_json | community.general.json_query('[].path') }}"
+    ansible.builtin.file:
+      path: "{{ item.path }}"
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      mode: "{{ item.mode }}"
+      state: directory
+    with_items: "{{ directories_list }}"
+    become: yes

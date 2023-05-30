@@ -1,0 +1,6 @@
+---
+- include_tasks: install-basetools-packages.yml
+  tags: [ always, install-basetools ]
+
+- include_tasks: install-portable-binary.yml
+  tags: [ always, jq, yq, envsubst ]

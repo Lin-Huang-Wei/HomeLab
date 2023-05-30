@@ -1,0 +1,13 @@
+---
+- block:
+  - name: "Remove packages"
+    apt:
+      name: "{{ item }}"
+      state: absent
+      force_apt_get: yes
+      fail_on_autoremove: true
+    with_items: "{{ PACKAGES_LIST }} "
+    ignore_errors: true
+    changed_when: false
+    check_mode: false
+    when: "{{ ENABLE_UNINSTALL_PKG | default(true) }}"
