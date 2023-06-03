@@ -10,6 +10,7 @@ resource "proxmox_vm_qemu" "instances" {
   for_each    = var.instances
 
   name        = each.value.name
+  tags        = each.value.tags
   desc        = each.value.desc
   target_node = each.value.target_node
   pool        = each.value.pool
