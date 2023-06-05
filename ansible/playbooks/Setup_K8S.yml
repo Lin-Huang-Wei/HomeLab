@@ -14,3 +14,4 @@
         when: "'worker_node' in group_names"
     roles:
       - role: install-basetools
+      - role: install-kubernetes
