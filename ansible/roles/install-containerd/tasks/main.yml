@@ -1,0 +1,5 @@
+- include_tasks: install-packages.yml
+  tags: [ always, install-containerd]
+
+- include_tasks: install-containerd.yml
+  tags: [ always, install-containerd]

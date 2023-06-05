@@ -1,0 +1,9 @@
+---
+- block:
+  - ansible.builtin.include_role: 
+      name: install-packages
+    loop:
+      - "{{ CONTAINERD_PREREQUISITE_PACKAGES | flatten(1) }}"
+    loop_control:
+      loop_var: PACKAGES_LIST
+    tags: install-containerd

@@ -1,0 +1,262 @@
+---
+# containerd
+- block:
+  - ansible.builtin.include_role:
+      name: create-directory
+    vars:
+      directories_list:
+        - path: "{{ CNI.BIN.CONTAINERD }}"
+          owner: root
+          group: root
+          mode: '0755'
+
+  - name: "Check Source Files Is Exists - containerd"
+    ansible.builtin.stat:
+      path: "{{ item }}"
+    loop:
+      - "{{ CNI.BIN.CONTAINERD }}/containerd"
+      - "{{ CNI.BIN.CONTAINERD }}/containerd-shim"
+      - "{{ CNI.BIN.CONTAINERD }}/containerd-shim-runc-v1"
+      - "{{ CNI.BIN.CONTAINERD }}/containerd-shim-runc-v2"
+      - "{{ CNI.BIN.CONTAINERD }}/containerd-stress"
+      - "{{ CNI.BIN.CONTAINERD }}/ctr"
+    register: src_files
+
+  - name: "Download portable binary from Github - containerd"
+    ansible.builtin.unarchive:
+      src: "https://github.com/containerd/containerd/releases/download/v{{ CONTAINERD_RELEASE_VERSION }}/containerd-{{ CONTAINERD_RELEASE_VERSION }}-linux-amd64.tar.gz"
+      dest: "{{ CNI.BIN.CONTAINERD }}"
+      owner: root
+      group: root
+      mode: '0755'
+      extra_opts:
+        - --strip-components=1
+      remote_src: yes
+    when:
+      - not src_files.results[0].stat.exists 
+
+  - name: "Create Symbolic link - containerd"
+    ansible.builtin.file:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      state: link
+    loop:
+      - { src: "{{ CNI.BIN.CONTAINERD }}/containerd", dest: "{{ USR.LOCAL.BIN }}/containerd" }
+      - { src: "{{ CNI.BIN.CONTAINERD }}/containerd-shim", dest: "{{ USR.LOCAL.BIN }}/containerd-shim" }
+      - { src: "{{ CNI.BIN.CONTAINERD }}/containerd-shim-runc-v1", dest: "{{ USR.LOCAL.BIN }}/containerd-shim-runc-v1" }
+      - { src: "{{ CNI.BIN.CONTAINERD }}/containerd-shim-runc-v2", dest: "{{ USR.LOCAL.BIN }}/containerd-shim-runc-v2" }
+      - { src: "{{ CNI.BIN.CONTAINERD }}/containerd-stress", dest: "{{ USR.LOCAL.BIN }}/containerd-stress" }
+      - { src: "{{ CNI.BIN.CONTAINERD }}/ctr", dest: "{{ USR.LOCAL.BIN }}/ctr" }
+    when:
+      - not src_files.results[0].stat.exists and
+        not src_files.results[1].stat.exists and
+        not src_files.results[2].stat.exists and
+        not src_files.results[3].stat.exists and
+        not src_files.results[4].stat.exists
+    tags: install-containerd
+
+# setup containerd's config.toml
+- block:
+  - ansible.builtin.include_role:
+      name: create-directory
+    vars:
+      directories_list:
+        - path: "{{ CNI.CONF.DIR }}"
+          owner: root
+          group: root
+          mode: '0755'
+
+  - name: "Check Source Files Is Exists - containerd's config.toml"
+    ansible.builtin.stat:
+      path: "{{ item }}"
+    loop:
+      - "{{ CNI.CONF.DIR }}/config.toml"
+    register: src_files
+
+  - name: "Create Defaults Containerd's Config File"
+    ansible.builtin.shell:
+      cmd: "containerd config default > {{ CNI.CONF.DIR }}/config.toml"
+    args:
+      executable: /bin/bash
+    when:
+      - not src_files.results[0].stat.exists
+
+  - name: "Check /opt/cni/bin in {{ CNI.CONF.DIR }}/config.toml"
+    ansible.builtin.shell:
+      cmd: "grep -E '      bin_dir = \"/opt/cni/bin\"' {{ CNI.CONF.DIR }}/config.toml"
+    args:
+      executable: /bin/bash
+    ignore_errors: yes
+    changed_when: false
+    check_mode: false
+    register: check_config
+
+  - name: "Replace /opt/cni/bin to {{ CNI.BIN.PLUGIN }} in {{ CNI.CONF.DIR }}/config.toml"
+    ansible.builtin.lineinfile:
+      path: "{{ CNI.CONF.DIR }}/config.toml"
+      regexp: "      bin_dir = \"/opt/cni/bin\""
+      line: "      bin_dir = \"{{ CNI.BIN.PLUGIN }}\""
+      state: present
+    when:
+      - check_config.stdout == "      bin_dir = \"/opt/cni/bin\""
+    tags: install-containerd
+
+# runc
+- block:
+  - ansible.builtin.include_role:
+      name: create-directory
+    vars:
+      directories_list:
+        - path: "{{ CNI.BIN.RUNC }}"
+          owner: root
+          group: root
+          mode: '0755'
+
+  - name: "Check Source Files Is Exists - runc"
+    ansible.builtin.stat:
+      path: "{{ item }}"
+    loop:
+      - "{{ CNI.BIN.RUNC }}/runc"
+    register: src_files
+
+  - name: "Download portable binary from Github - runc"
+    ansible.builtin.get_url:
+      url: "https://github.com/opencontainers/runc/releases/download/v{{ RUNC_RELEASE_VERSION }}/runc.amd64"
+      dest: "{{ CNI.BIN.RUNC }}/runc"
+      mode: '0755'
+    when:
+      - not src_files.results[0].stat.exists
+
+  - name: "Create Symbolic link - runc"
+    ansible.builtin.file:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      state: link
+    loop:
+      - { src: "{{ CNI.BIN.RUNC }}/runc", dest: "{{ USR.LOCAL.BIN }}/runc" }
+    when:
+      - not src_files.results[0].stat.exists
+    tags: install-containerd
+
+
+# cni-plugin
+- block:
+  - ansible.builtin.include_role:
+      name: create-directory
+    vars:
+      directories_list:
+        - path: "{{ CNI.BIN.PLUGIN }}"
+          owner: root
+          group: root
+          mode: '0755'
+
+  - name: "Check Source Files Is Exists - cni-plugin"
+    ansible.builtin.stat:
+      path: "{{ item }}"
+    loop:
+      - "{{ CNI.BIN.PLUGIN }}/bandwidth"
+      - "{{ CNI.BIN.PLUGIN }}/bridge"
+      - "{{ CNI.BIN.PLUGIN }}/dhcp"
+      - "{{ CNI.BIN.PLUGIN }}/dummy"
+      - "{{ CNI.BIN.PLUGIN }}/firewall"
+      - "{{ CNI.BIN.PLUGIN }}/host-device"
+      - "{{ CNI.BIN.PLUGIN }}/host-local"
+      - "{{ CNI.BIN.PLUGIN }}/ipvlan"
+      - "{{ CNI.BIN.PLUGIN }}/loopback"
+      - "{{ CNI.BIN.PLUGIN }}/macvlan"
+      - "{{ CNI.BIN.PLUGIN }}/portmap"
+      - "{{ CNI.BIN.PLUGIN }}/ptp"
+      - "{{ CNI.BIN.PLUGIN }}/sbr"
+      - "{{ CNI.BIN.PLUGIN }}/static"
+      - "{{ CNI.BIN.PLUGIN }}/tap"
+      - "{{ CNI.BIN.PLUGIN }}/tuning"
+      - "{{ CNI.BIN.PLUGIN }}/vlan"
+      - "{{ CNI.BIN.PLUGIN }}/vrf"
+    register: src_files
+
+  - name: "Download portable binary from Github - cni-plugins"
+    ansible.builtin.unarchive:
+      src: "https://github.com/containernetworking/plugins/releases/download/v{{ CNI_RELEASE_VERSION }}/cni-plugins-linux-amd64-v{{ CNI_RELEASE_VERSION }}.tgz"
+      dest: "{{ CNI.BIN.PLUGIN }}"
+      owner: root
+      group: root
+      mode: 0755
+      remote_src: yes
+    when:
+      - not src_files.results[0].stat.exists
+
+  - name: "Create Symbolic link - cni-plugin"
+    ansible.builtin.file:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      state: link
+    loop:
+      - { src: "{{ CNI.BIN.PLUGIN }}/bandwidth", dest: "{{ USR.LOCAL.BIN }}/bandwidth" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/bridge", dest: "{{ USR.LOCAL.BIN }}/bridge" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/dhcp", dest: "{{ USR.LOCAL.BIN }}/dhcp" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/dummy", dest: "{{ USR.LOCAL.BIN }}/dummy" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/firewall", dest: "{{ USR.LOCAL.BIN }}/firewall" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/host-device", dest: "{{ USR.LOCAL.BIN }}/host-device" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/host-local", dest: "{{ USR.LOCAL.BIN }}/host-local" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/ipvlan", dest: "{{ USR.LOCAL.BIN }}/ipvlan" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/loopback", dest: "{{ USR.LOCAL.BIN }}/loopback" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/macvlan", dest: "{{ USR.LOCAL.BIN }}/macvlan" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/portmap", dest: "{{ USR.LOCAL.BIN }}/portmap" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/ptp", dest: "{{ USR.LOCAL.BIN }}/ptp" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/sbr", dest: "{{ USR.LOCAL.BIN }}/sbr" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/static", dest: "{{ USR.LOCAL.BIN }}/static" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/tap", dest: "{{ USR.LOCAL.BIN }}/tap" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/tuning", dest: "{{ USR.LOCAL.BIN }}/tuning" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/vlan", dest: "{{ USR.LOCAL.BIN }}/vlan" }
+      - { src: "{{ CNI.BIN.PLUGIN }}/vrf", dest: "{{ USR.LOCAL.BIN }}/vrf" }
+    when:
+      - not src_files.results[0].stat.exists and
+        not src_files.results[1].stat.exists and
+        not src_files.results[2].stat.exists and
+        not src_files.results[3].stat.exists and
+        not src_files.results[4].stat.exists and
+        not src_files.results[5].stat.exists and
+        not src_files.results[6].stat.exists and
+        not src_files.results[7].stat.exists and
+        not src_files.results[8].stat.exists and
+        not src_files.results[9].stat.exists and
+        not src_files.results[10].stat.exists and
+        not src_files.results[11].stat.exists and
+        not src_files.results[12].stat.exists and
+        not src_files.results[13].stat.exists and
+        not src_files.results[14].stat.exists and
+        not src_files.results[15].stat.exists and
+        not src_files.results[16].stat.exists and
+        not src_files.results[17].stat.exists
+    tags: install-containerd
+
+# setup containerd service
+- block:
+  - name: "Check /etc/systemd/system/containerd.service is configured"
+    ansible.builtin.stat:
+      path: "{{ item }}"
+    loop:
+      - "/etc/systemd/system/containerd.service"
+    register: src_files
+
+  - name: "Ensure /etc/systemd/system/containerd.service is configured"
+    ansible.builtin.copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: '0644'
+    loop:
+      - { src: "files/containerd.service", dest: "/etc/systemd/system/containerd.service" }
+    notify: 
+      - "Start containerd service"
+    when:
+      - not src_files.results[0].stat.exists
+    tags: install-containerd
+
