@@ -1,0 +1,15 @@
+---
+- block:
+  - name: "[Inbound] Allow 10250 port for Kubelet API"
+    ansible.builtin.iptables:
+      chain: INPUT
+      protocol: tcp
+      destination_port: "10250"
+      jump: ACCEPT
+
+  - name: "[Inbound] Allow 30000-32767 port for NodePort Services"
+    ansible.builtin.iptables:
+      chain: INPUT
+      protocol: tcp
+      destination_port: "30000:32767"
+      jump: ACCEPT

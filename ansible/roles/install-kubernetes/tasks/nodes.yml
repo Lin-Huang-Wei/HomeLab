@@ -1,0 +1,16 @@
+---
+- block:
+  - name: "Disabled swap"
+    ansible.builtin.shell:
+      cmd: swapoff -a
+    args:
+      executable: /bin/bash
+
+- block:
+  - ansible.builtin.include_role:
+      name: install-containerd
+    vars:
+      - CONTAINERD_RELEASE_VERSION: 1.7.2
+      - RUNC_RELEASE_VERSION: 1.1.7
+      - CNI_RELEASE_VERSION: 1.3.0
+      
