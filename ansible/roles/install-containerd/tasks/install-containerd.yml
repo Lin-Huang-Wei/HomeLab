@@ -256,7 +256,4 @@
       - { src: "files/containerd.service", dest: "/etc/systemd/system/containerd.service" }
     notify: 
       - "Start containerd service"
-    when:
-      - not src_files.results[0].stat.exists
     tags: install-containerd
-
