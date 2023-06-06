@@ -1,0 +1,145 @@
+---
+# 5.2.1
+- block:
+    - name: "Scored | 5.2.1 | Check permissions on /etc/ssh/sshd_config are configured"
+      ansible.builtin.stat:
+        path: /etc/ssh/sshd_config
+      register: sshd_permissions
+
+    - name: "Scored | 5.2.1 | Ensure permissions on /etc/ssh/sshd_config are configured"
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+      failed_when:
+        - sshd_permissions.stat.exists == 'false' and
+          sshd_permissions.stat.mode != "0600"
+
+# 5.2.3
+- block:
+    - name: "Scored | 5.2.3 | Check permissions on ssh public host key files are configured"
+      ansible.builtin.shell:
+        cmd: "find /etc/ssh -xdev -type f -name 'ssh_host_*_key.pub'"
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_host_key_pub
+
+    - name: "Scored | 5.2.3 | Check permissions on ssh public host key files are configured"
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop: "{{ sshd_host_key_pub.stdout_lines }}"
+      register: sshd_host_key_pub_permissions
+
+    - name: "Scored | 5.2.3 | Ensure permissions on /etc/ssh/sshd_config are configured"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - "{{ sshd_host_key_pub_permissions.results[0].item }}"
+        - "{{ sshd_host_key_pub_permissions.results[1].item }}"
+        - "{{ sshd_host_key_pub_permissions.results[2].item }}"
+        - "{{ sshd_host_key_pub_permissions.results[3].item }}"
+      failed_when:
+        - sshd_host_key_pub_permissions.results[0].stat.exists == 'false' and
+          sshd_host_key_pub_permissions.results[0].stat.mode != "0644"
+        - sshd_host_key_pub_permissions.results[1].stat.exists == 'false' and
+          sshd_host_key_pub_permissions.results[1].stat.mode != "0644"
+        - sshd_host_key_pub_permissions.results[2].stat.exists == 'false' and
+          sshd_host_key_pub_permissions.results[2].stat.mode != "0644"
+        - sshd_host_key_pub_permissions.results[3].stat.exists == 'false' and
+          sshd_host_key_pub_permissions.results[3].stat.mode != "0644"
+
+# 5.2.4
+- block:
+    - name: "Scored | 5.2.4 | Check SSH access is limited"
+      ansible.builtin.shell: grep "{{ item }}" /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      loop:
+        - '^AllowUsers'
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_accessislimited
+
+    - name: "Scored | 5.2.4 | Ensure SSH access is limited"
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        insertafter: EOF
+        state: present
+      loop:
+        - { regexp: '', line: "AllowUsers {{ SSHD_ALLOW_USERS }}" }
+      when:
+        - sshd_accessislimited.results[0].stdout != "AllowUsers {{ SSHD_ALLOW_USERS }}"
+
+# 5.2.5
+- block:
+    - name: "Scored | 5.2.5 | Check SSH LogLevel is set to INFO"
+      ansible.builtin.shell: grep "^#LogLevel" /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_loglevel
+
+    - name: "Scored | 5.2.5 | Ensure SSH LogLevel is set to INFO"
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#LogLevel\s'
+        line: 'LogLevel INFO'
+        state: present
+      when:
+        - sshd_loglevel.stdout == "#LogLevel INFO"
+
+# 5.2.6
+- block:
+    - name: "Scored | 5.2.6 | Check SSH PAM is enabled"
+      ansible.builtin.shell: grep -E "^\W+UsePAM\s+(yes|no)" /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_pam
+
+    - name: "Scored | 5.2.6 | Ensure SSH PAM is enabled"
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\W+UsePAM\s+(yes|no)'
+        line: 'UsePAM yes'
+        state: present
+      when:
+        - sshd_pam.stdout == "#UsePAM yes" or
+          sshd_pam.stdout == "#UsePAM no"
+
+# 5.2.7
+- block:
+    - name: "Scored | 5.2.7 | Check SSH root login is disabled"
+      shell: grep -E "^\W+PermitRootLogin\s+(yes|no|prohibit-password)" /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_permitrootlogin
+
+    - name: "Scored | 5.2.7 | Ensure SSH root login is disabled"
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\W+PermitRootLogin\s+(yes|no|prohibit-password)'
+        line: 'PermitRootLogin no'
+        state: present
+      when:
+        - sshd_permitrootlogin.stdout == "#PermitRootLogin prohibit-password" or
+          sshd_permitrootlogin.stdout == "#PermitRootLogin no" or
+          sshd_permitrootlogin.stdout == "#PermitRootLogin yes"
+

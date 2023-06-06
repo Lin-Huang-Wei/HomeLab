@@ -1,0 +1,2 @@
+---
+- include_tasks: 5-2-configure-ssh-server.yml
