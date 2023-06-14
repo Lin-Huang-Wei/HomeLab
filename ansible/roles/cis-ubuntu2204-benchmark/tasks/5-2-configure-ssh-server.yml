@@ -58,7 +58,8 @@
 # 5.2.4
 - block:
     - name: "Scored | 5.2.4 | Check SSH access is limited"
-      ansible.builtin.shell: grep "{{ item }}" /etc/ssh/sshd_config
+      ansible.builtin.shell:
+        cmd: grep "{{ item }}" /etc/ssh/sshd_config
       args:
         executable: /bin/bash
       loop:
@@ -83,7 +84,8 @@
 # 5.2.5
 - block:
     - name: "Scored | 5.2.5 | Check SSH LogLevel is set to INFO"
-      ansible.builtin.shell: grep "^#LogLevel" /etc/ssh/sshd_config
+      ansible.builtin.shell:
+        cmd: grep "^#LogLevel" /etc/ssh/sshd_config
       args:
         executable: /bin/bash
       ignore_errors: yes
@@ -103,7 +105,8 @@
 # 5.2.6
 - block:
     - name: "Scored | 5.2.6 | Check SSH PAM is enabled"
-      ansible.builtin.shell: grep -E "^\W+UsePAM\s+(yes|no)" /etc/ssh/sshd_config
+      ansible.builtin.shell:
+        cmd: grep -E "^\W+UsePAM\s+(yes|no)" /etc/ssh/sshd_config
       args:
         executable: /bin/bash
       ignore_errors: yes
@@ -124,7 +127,8 @@
 # 5.2.7
 - block:
     - name: "Scored | 5.2.7 | Check SSH root login is disabled"
-      shell: grep -E "^\W+PermitRootLogin\s+(yes|no|prohibit-password)" /etc/ssh/sshd_config
+      ansible.builtin.shell:
+        cmd: grep -E "^\W+PermitRootLogin\s+(yes|no|prohibit-password)" /etc/ssh/sshd_config
       args:
         executable: /bin/bash
       ignore_errors: yes
@@ -133,7 +137,7 @@
       register: sshd_permitrootlogin
 
     - name: "Scored | 5.2.7 | Ensure SSH root login is disabled"
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '^\W+PermitRootLogin\s+(yes|no|prohibit-password)'
         line: 'PermitRootLogin no'
@@ -143,3 +147,86 @@
           sshd_permitrootlogin.stdout == "#PermitRootLogin no" or
           sshd_permitrootlogin.stdout == "#PermitRootLogin yes"
 
+# 5.2.8
+- block:
+    - name: "Scored | 5.2.8 | Check SSH HostbasedAuthentication is disabled"
+      ansible.builtin.shell:
+        cmd: grep -Ei "^\W+HostbasedAuthentication$" /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_hostbasedauthentication
+
+    - name: "Scored | 5.2.8 | Ensure SSH HostbasedAuthentication is disabled"
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\W+HostbasedAuthentication'
+        line: 'HostbasedAuthentication no'
+        state: present
+      when:
+        - sshd_hostbasedauthentication.stdout == "# HostbasedAuthentication"
+
+# 5.2.9
+- block:
+    - name: "Scored | 5.2.9 | Check SSH PermitEmptyPasswords is disabled"
+      ansible.builtin.shell:
+        cmd: grep -Ei "^\WPermitEmptyPasswords\s+(no)" /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_permitemptypasswords
+
+    - name: "Scored | 5.2.9 | Ensure SSH PermitEmptyPasswords is disabled"
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\WPermitEmptyPasswords\s+(no)'
+        line: 'PermitEmptyPasswords no'
+        state: present
+      when:
+        - sshd_permitemptypasswords.stdout == "#PermitEmptyPasswords no"
+
+# 5.2.10
+- block:
+    - name: "Scored | 5.2.10 | Check SSH PermitUserEnvironment is disabled"
+      ansible.builtin.shell:
+        cmd: grep -Ei "^\WPermitUserEnvironment\s+(no)" /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_permituserenvironment
+
+    - name: "Scored | 5.2.10 | Ensure SSH PermitUserEnvironment is disabled"
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\WPermitUserEnvironment\s+(no)'
+        line: 'PermitUserEnvironment no'
+        state: present
+      when:
+        - sshd_permituserenvironment.stdout == "#PermitUserEnvironment no"
+
+# 5.2.11
+- block:
+    - name: "Scored | 5.2.11 | Check SSH IgnoreRhosts is enabled"
+      ansible.builtin.shell:
+        cmd: grep -Ei '^\Wignorerhosts\s+(yes)' /etc/ssh/sshd_config
+      args:
+        executable: /bin/bash
+      ignore_errors: yes
+      changed_when: false
+      check_mode: false
+      register: sshd_ignorerhosts
+
+    - name: "Scored | 5.2.11 | Ensure SSH IgnoreRhosts is enabled"
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^\Wignorerhosts\s+(yes)'
+        line: 'IgnoreRhosts yes'
+        state: present
+      when:
+        - sshd_ignorerhosts.stdout == "#IgnoreRhosts yes"
