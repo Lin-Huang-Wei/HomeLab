@@ -142,7 +142,6 @@
       - not src_files.results[0].stat.exists
     tags: install-containerd
 
-
 # cni-plugin
 - block:
   - ansible.builtin.include_role:
@@ -256,4 +255,57 @@
       - { src: "files/containerd.service", dest: "/etc/systemd/system/containerd.service" }
     notify: 
       - "Start containerd service"
+    tags: install-containerd
+
+# crictl
+- block:
+  - ansible.builtin.include_role:
+      name: create-directory
+    vars:
+      directories_list:
+        - path: "{{ CNI.BIN.CRICTL }}"
+          owner: root
+          group: root
+          mode: '0755'
+
+  - name: "Check Source Files Is Exists - crictl"
+    ansible.builtin.stat:
+      path: "{{ item }}"
+    loop:
+      - "{{ CNI.BIN.CRICTL }}/crictl"
+    register: src_files
+
+  - name: "Download portable binary from Github - crictl"
+    ansible.builtin.unarchive:
+      src: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v{{ CRICTL_RELEASE_VERSION }}/crictl-v{{ CRICTL_RELEASE_VERSION }}-linux-amd64.tar.gz"
+      dest: "{{ CNI.BIN.CRICTL }}"
+      owner: root
+      group: root
+      mode: 0755
+      remote_src: yes
+    when:
+      - not src_files.results[0].stat.exists
+
+  - name: "Create Symbolic Link - crictl"
+    ansible.builtin.file:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      state: link
+    loop:
+      - { src: "{{ CNI.BIN.CRICTL }}/crictl", dest: "{{ USR.LOCAL.BIN }}/crictl" }
+    when:
+      - not src_files.results[0].stat.exists
+    tags: install-containerd
+
+# setup crictl config
+- block:
+  - name: "Ensure /etc/crictl.yaml exists"
+    ansible.builtin.template:
+      src: templates/crictl.yml.j2
+      dest: "{{ CNI.CONF.CRICTL }}"
+      owner: root
+      group: root
+      mode: '0644'
     tags: install-containerd

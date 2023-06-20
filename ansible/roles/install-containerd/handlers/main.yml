@@ -5,6 +5,3 @@
       name: containerd.service
       daemon_reload: true
       state: restarted  
-      
-
-  

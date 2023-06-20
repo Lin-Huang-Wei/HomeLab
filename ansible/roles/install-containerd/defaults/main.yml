@@ -2,6 +2,7 @@
 CONTAINERD_RELEASE_VERSION: 1.7.2
 RUNC_RELEASE_VERSION: 1.1.7
 CNI_RELEASE_VERSION: 1.3.0
+CRICTL_RELEASE_VERSION: 1.27.0
 
 USR:
   LOCAL:
@@ -10,10 +11,15 @@ USR:
 CNI:
   CONF:
     DIR: /etc/containerd
+    CRICTL: /etc/crictl.yaml
   BIN:
     CONTAINERD: /opt/containerd/{{ CONTAINERD_RELEASE_VERSION }}/bin
     RUNC: /opt/runc/{{ RUNC_RELEASE_VERSION }}/bin
     PLUGIN: /opt/cni/{{ CNI_RELEASE_VERSION }}/bin
+    CRICTL: /opt/crictl/{{ CRICTL_RELEASE_VERSION }}/bin
+
+CRICTL_RUNTIME_ENDPOINT: /run/containerd/containerd.sock
+CRICTL_IMAGE_ENDPOINT: /run/containerd/containerd.sock
 
 CONTAINERD_PREREQUISITE_PACKAGES:
   - iptables
