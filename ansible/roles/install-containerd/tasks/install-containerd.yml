@@ -77,30 +77,19 @@
 
   - name: "Create Defaults Containerd's Config File"
     ansible.builtin.shell:
-      cmd: "containerd config default > {{ CNI.CONF.DIR }}/config.toml"
+      cmd: "containerd config default > {{ CNI.CONF.DIR }}/config.toml.origin"
     args:
       executable: /bin/bash
     when:
       - not src_files.results[0].stat.exists
 
-  - name: "Check /opt/cni/bin in {{ CNI.CONF.DIR }}/config.toml"
-    ansible.builtin.shell:
-      cmd: "grep -E '      bin_dir = \"/opt/cni/bin\"' {{ CNI.CONF.DIR }}/config.toml"
-    args:
-      executable: /bin/bash
-    ignore_errors: yes
-    changed_when: false
-    check_mode: false
-    register: check_config
-
-  - name: "Replace /opt/cni/bin to {{ CNI.BIN.PLUGIN }} in {{ CNI.CONF.DIR }}/config.toml"
-    ansible.builtin.lineinfile:
-      path: "{{ CNI.CONF.DIR }}/config.toml"
-      regexp: "      bin_dir = \"/opt/cni/bin\""
-      line: "      bin_dir = \"{{ CNI.BIN.PLUGIN }}\""
-      state: present
-    when:
-      - check_config.stdout == "      bin_dir = \"/opt/cni/bin\""
+  - name: "Ensure Containerd's Config File Exists"
+    ansible.builtin.template:
+      src: templates/defaults-config.toml.j2
+      dest: "{{ CNI.CONF.DIR }}/config.toml"
+      owner: root
+      group: root
+      mode: '0644'
     tags: install-containerd
 
 # runc
