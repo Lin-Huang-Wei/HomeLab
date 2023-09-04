@@ -1,3 +1,9 @@
 rebuild:latest
 simple-theme-plugin:latest
-uno-choice:2.6.4
+uno-choice:2.7.2
+pipeline-stage-view:2.33
+gerrit-trigger:2.39.3
+envinject:2.908.v66a_774b_31d93
+email-ext:2.100
+docker-plugin:1.5
+role-strategy:689.v731678c3e0eb_
