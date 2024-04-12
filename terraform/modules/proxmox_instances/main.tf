@@ -50,11 +50,14 @@ resource "proxmox_vm_qemu" "instances" {
         }
       }
       # Data disk
-      scsi1 {
-        disk {
-          storage = each.value.data_disk_storage
-          size    = each.value.data_disk_size
-          backup  = each.value.data_disk_backup
+      dynamic "scsi1" {
+        for_each = each.value.enable_data_disk == true ? [1] : []
+        content {
+          disk {
+            storage = each.value.data_disk_storage
+            size    = each.value.data_disk_size
+            backup  = each.value.data_disk_backup
+          }
         }
       }
     }
