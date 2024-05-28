@@ -23,9 +23,9 @@ STORAGE="local-lvm"
 REHL_QCOW2='rhel-8.8-x86_64-kvm.qcow2'
 PACKAGES_LIST=(qemu-guest-agent)
 
+# Let the user enter root password
 read -sp "Please enter the root password: " ROOT_PASSWD
 echo
-
 
 function INFO() {
   printf "${GREEN}[INFO] ${RESET}%s\n" "${1}"
