@@ -10,30 +10,37 @@ resource "proxmox_vm_qemu" "instances" {
 
   for_each = var.instances
 
-  name        = each.value.name
-  tags        = each.value.tags
-  desc        = each.value.desc
-  target_node = each.value.target_node
-  onboot      = each.value.onboot
-  pool        = each.value.pool
+  name               = each.value.name
+  tags               = each.value.tags
+  description        = each.value.desc
+  target_node        = each.value.target_node
+  start_at_node_boot = each.value.onboot
+  pool               = each.value.pool
 
   # The template name to clone this vm from
-  clone                   = each.value.clone
-  full_clone              = each.value.full_clone
-  cloudinit_cdrom_storage = each.value.cloudinit_cdrom_storage
-  # force_create	= each.value.force_create
+  clone      = each.value.clone
+  full_clone = each.value.full_clone
 
-  # If you want to activate the QEMU agent in the VM,
-  # please don't forget to install the qemu-guest-agent package before you run.
-  # see reference: https://pve.proxmox.com/wiki/Qemu-guest-agent
+  # Prevent Terraform from destroying and recreating the VM if the clone source changes
+  lifecycle {
+    ignore_changes = [
+      clone,
+      full_clone,
+    ]
+  }
+
   agent = each.value.agent
 
-  vmid     = each.value.vmid
-  os_type  = each.value.os_type
-  qemu_os  = each.value.qemu_os
-  cpu      = each.value.cpu
-  cores    = each.value.cores
-  sockets  = each.value.sockets
+  vmid    = each.value.vmid
+  os_type = each.value.os_type
+  qemu_os = each.value.qemu_os
+
+  cpu {
+    type    = each.value.cpu
+    cores   = each.value.cores
+    sockets = each.value.sockets
+  }
+
   memory   = each.value.memory
   scsihw   = each.value.scsihw
   bootdisk = each.value.bootdisk
@@ -61,10 +68,19 @@ resource "proxmox_vm_qemu" "instances" {
         }
       }
     }
+    # Cloud-init CD-ROM
+    ide {
+      ide2 {
+        cloudinit {
+          storage = each.value.cloudinit_cdrom_storage
+        }
+      }
+    }
   }
 
   # Setup the network interface and assign
   network {
+    id       = 0
     model    = each.value.network_model
     bridge   = each.value.network_bridge
     firewall = each.value.network_firewall
@@ -77,7 +93,6 @@ resource "proxmox_vm_qemu" "instances" {
 
   ipconfig0 = "ip=${each.value.ip_address}/23,gw=${each.value.gateway}"
 
-  ssh_user         = each.value.ssh_user
   ciuser           = each.value.ssh_user
   cipassword       = each.value.cloud_init_pass
   sshkeys          = tls_private_key.ed25519_private_key.public_key_openssh
