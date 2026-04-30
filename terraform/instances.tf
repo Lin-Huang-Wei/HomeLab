@@ -31,22 +31,30 @@ locals {
   }
 
   # 2. 作業系統特定的預設值
-  ubuntu_defaults = merge(local.base_defaults, {
-    tags  = "ubuntu"
-    clone = "ubuntu-noble-minimal-tpl"
-    desc  = "terraform managed vm"
-  })
+  os_defaults = {
+    "ubuntu_noble" = merge(local.base_defaults, {
+      tags  = "ubuntu"
+      clone = "ubuntu-noble-minimal-tpl"
+      desc  = "terraform managed vm"
+    })
 
-  rhel_defaults = merge(local.base_defaults, {
-    tags  = "redhat"
-    clone = "rhel8-ootpa-tpl"
-    desc  = "terraform managed vm"
-  })
+    "rhel_ootpa" = merge(local.base_defaults, {
+      tags  = "redhat"
+      clone = "rhel8-ootpa-tpl"
+      desc  = "terraform managed vm"
+    })
+
+    "rhel_plow" = merge(local.base_defaults, {
+      tags  = "redhat"
+      clone = "rhel9-plow-tpl"
+      desc  = "terraform managed vm"
+    })
+  }
 
   # 3. 各台 VM 的個別配置 (只寫不一樣的地方)
   instance_configs = {
     gitlab = {
-      os_family        = "ubuntu"
+      os_family        = "ubuntu_noble"
       vmid             = 101
       cores            = 4
       sockets          = 2
@@ -58,7 +66,7 @@ locals {
     }
 
     redmine = {
-      os_family        = "ubuntu"
+      os_family        = "ubuntu_noble"
       vmid             = 102
       cores            = 4
       sockets          = 2
@@ -70,7 +78,7 @@ locals {
     }
 
     k8s-master-01 = {
-      os_family        = "ubuntu"
+      os_family        = "ubuntu_noble"
       vmid             = 103
       cores            = 2
       sockets          = 2
@@ -82,7 +90,7 @@ locals {
     }
 
     k8s-node-01 = {
-      os_family        = "ubuntu"
+      os_family        = "ubuntu_noble"
       vmid             = 104
       cores            = 4
       sockets          = 4
@@ -94,7 +102,7 @@ locals {
     }
 
     k8s-node-02 = {
-      os_family        = "ubuntu"
+      os_family        = "ubuntu_noble"
       vmid             = 105
       cores            = 4
       sockets          = 4
@@ -105,21 +113,33 @@ locals {
       data_disk_size   = "300"
     }
 
-    lab-node-01 = {
-      os_family        = "ubuntu"
-      vmid             = 106
+    #lab-node-01 = {
+    #  os_family        = "ubuntu_noble"
+    #  vmid             = 106
+    #  cores            = 4
+    #  sockets          = 4
+    #  memory           = 4096
+    #  disk_size        = "40"
+    #  ip_address       = "192.168.20.106"
+    #  enable_data_disk = false
+    #  data_disk_size   = "300"
+    #}
+
+    rhel-plow-01 = {
+      os_family        = "rhel_plow"
+      vmid             = 107
       cores            = 4
       sockets          = 4
-      memory           = 4096
+      memory           = 16384
       disk_size        = "40"
-      ip_address       = "192.168.20.106"
+      ip_address       = "192.168.20.107"
       enable_data_disk = false
       data_disk_size   = "300"
     }
 
     /* 範例：取消註解即可快速新增機器
     rhel8-ootpa-01 = {
-      os_family  = "rhel"
+      os_type    = "rhel_ootpa"
       vmid       = 104
       cores      = 2
       sockets    = 2
@@ -133,7 +153,7 @@ locals {
   # 4. 自動合併產生最終的 instances Map
   instances = {
     for k, v in local.instance_configs : k => merge(
-      v.os_family == "ubuntu" ? local.ubuntu_defaults : local.rhel_defaults,
+      lookup(local.os_defaults, try(v.os_type, v.os_family), local.base_defaults),
       v,
       { name = k } # 自動使用 Map 的 Key 作為 VM 名稱
     )
