@@ -26,8 +26,7 @@ locals {
     boot                    = "order=scsi0;ide2"
     automatic_reboot        = true
     enable_data_disk        = false
-    data_disk_storage       = "pve-data"
-    data_disk_backup        = false
+    data_disks              = []
   }
 
   # 2. 作業系統特定的預設值
@@ -62,7 +61,12 @@ locals {
       disk_size        = "40"
       ip_address       = "192.168.20.101"
       enable_data_disk = true
-      data_disk_size   = "300"
+      data_disks = [
+        {
+          size    = "300"
+          storage = "pve-data"
+        }
+      ]
     }
 
     redmine = {
@@ -74,7 +78,12 @@ locals {
       disk_size        = "40"
       ip_address       = "192.168.20.102"
       enable_data_disk = true
-      data_disk_size   = "300"
+      data_disks = [
+        {
+          size    = "300"
+          storage = "pve-data"
+        }
+      ]
     }
 
     k8s-master-01 = {
@@ -86,7 +95,6 @@ locals {
       disk_size        = "40"
       ip_address       = "192.168.20.103"
       enable_data_disk = false
-      data_disk_size   = "300"
     }
 
     k8s-node-01 = {
@@ -98,7 +106,6 @@ locals {
       disk_size        = "40"
       ip_address       = "192.168.20.104"
       enable_data_disk = false
-      data_disk_size   = "300"
     }
 
     k8s-node-02 = {
@@ -110,7 +117,6 @@ locals {
       disk_size        = "40"
       ip_address       = "192.168.20.105"
       enable_data_disk = false
-      data_disk_size   = "300"
     }
 
     #lab-node-01 = {
@@ -122,7 +128,12 @@ locals {
     #  disk_size        = "40"
     #  ip_address       = "192.168.20.106"
     #  enable_data_disk = false
-    #  data_disk_size   = "300"
+    #  data_disks = [
+    #    {
+    #      size    = "300"
+    #      storage = "pve-data"
+    #    }
+    #  ]
     #}
 
     rhel-plow-01 = {
@@ -133,8 +144,13 @@ locals {
       memory           = 16384
       disk_size        = "40"
       ip_address       = "192.168.20.107"
-      enable_data_disk = false
-      data_disk_size   = "300"
+      enable_data_disk = true
+      data_disks = [
+        {
+          size    = "300"
+          storage = "pve-data"
+        }
+      ]
     }
 
     /* 範例：取消註解即可快速新增機器

@@ -56,14 +56,34 @@ resource "proxmox_vm_qemu" "instances" {
           backup  = each.value.disk_backup
         }
       }
-      # Data disk
+      # Data disks
       dynamic "scsi1" {
-        for_each = each.value.enable_data_disk == true ? [1] : []
+        for_each = each.value.enable_data_disk && length(try(each.value.data_disks, [])) > 0 ? [each.value.data_disks[0]] : []
         content {
           disk {
-            storage = each.value.data_disk_storage
-            size    = each.value.data_disk_size
-            backup  = each.value.data_disk_backup
+            storage = scsi1.value.storage
+            size    = scsi1.value.size
+            backup  = try(scsi1.value.backup, false)
+          }
+        }
+      }
+      dynamic "scsi2" {
+        for_each = each.value.enable_data_disk && length(try(each.value.data_disks, [])) > 1 ? [each.value.data_disks[1]] : []
+        content {
+          disk {
+            storage = scsi2.value.storage
+            size    = scsi2.value.size
+            backup  = try(scsi2.value.backup, false)
+          }
+        }
+      }
+      dynamic "scsi3" {
+        for_each = each.value.enable_data_disk && length(try(each.value.data_disks, [])) > 2 ? [each.value.data_disks[2]] : []
+        content {
+          disk {
+            storage = scsi3.value.storage
+            size    = scsi3.value.size
+            backup  = try(scsi3.value.backup, false)
           }
         }
       }
